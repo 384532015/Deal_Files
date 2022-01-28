@@ -40,8 +40,6 @@ class DataFrame:
 #变量名生成器
 
 
-
-
 #输入字典，生成元素为DataFrame的变量名的列表
 class Files:
     def __init__(self,dic):
