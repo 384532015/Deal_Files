@@ -1,6 +1,8 @@
 import pandas as pd
 import os,re
+from collections import abc
 
+#输入文件路径，生成字典{绝对路径：文件后缀名}
 class Folder:
     def __init__(self,Folder_dir):
         self.Folder_dir = Folder_dir
@@ -21,7 +23,7 @@ class Folder:
             else:
                 return Folder.Dealing(file)
 
-#描述符
+#描述符（还是不会！），用于储存多个数据
 class DataFrame:
     __count = 0
     def __init__(self):
@@ -37,9 +39,6 @@ class DataFrame:
     def __set__(self,instance,value):
         setattr(instance, self.storage_name, value)
 
-#变量名生成器
-
-
 #输入字典，生成元素为DataFrame的变量名的列表
 class Files:
     def __init__(self,dic):
@@ -54,15 +53,47 @@ class Files:
 
     def __repr__(self):
         #用数字作为变量名！！！！
+        #目前只能处理一级标题的表格
         for path,key,name in self.dic.items(),range(len(self.dic)):
             if key == 'txt':
                 name = DataFrame()
+                #根据不同的文件类型，采用不同的方法
                 name = eval(self.method[key])(path,sep = ',')
             else:
                 name = DataFrame()
                 name = eval(self.method[key])(path)
             self.list.append(name)
         return self.list
+
+#用于处理文件,输入文件列表，根据文件内容，选择concat或者merge的处理方法
+class Dealing:
+    def __init__(self,file_list):
+        self.file_list_1 = file_list.pop(0)
+        self.file_list = file_list
+        self.list_merge = []
+        self.merge = DataFrame()
+        self.concat = DataFrame()
+
+    @classmethod
+    def Dealing(cls,files):
+        concat_list = []
+        #遍历分类
+        if isinstance(files,abc.MutableSequence):
+            file_1 = files.pop(0)
+            for file in files:
+                if len(file.colums - file_1.columns) <= 2:
+                    concat_list.append(file)
+                    files.remove(file)
+                else:
+                    pass
+            df_concat = pd.concat(concat_list)
+
+
+
+
+
+
+
 
 
 
