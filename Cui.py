@@ -41,24 +41,27 @@ class Files:
                 if eval(self.method[key])(path,sep = ',').columns not in self.dictionary.keys():
                     self.dictionary[eval(self.method[key])(path,sep = ',').columns] = eval(self.method[key])(path,sep = ',')
                 else:
+                    #合并同时去重
                     self.dictionary[eval(self.method[key])(path,sep = ',').columns] = pd.concat(
                         [self.dictionary[eval(self.method[key])(path,sep = ',').columns],
-                         self.dictionary[eval(self.method[key])(path,sep = ',')]])
+                         self.dictionary[eval(self.method[key])(path,sep = ',')]]).drop_duplicates()
             else:
                 if eval(self.method[key])(path, sep=',').columns not in self.dictionary.keys():
                     self.dictionary[eval(self.method[key])(path).columns] = eval(self.method[key])(path)
                 else:
+                    #合并同时去重
                     self.dictionary[eval(self.method[key])(path).columns] = pd.concat(
                         [self.dictionary[eval(self.method[key])(path).columns],
-                         self.dictionary[eval(self.method[key])(path)]])
+                         self.dictionary[eval(self.method[key])(path)]]).drop_duplicates()
         return self.dictionary
 
-#用于处理文件,输入字典，根据文件内容，选择concat或者merge的处理方法
+#用于处理文件,输入字典，根据文件内容，根据文件项数，使用pd.merge()的方法
 class Dealing:
     def __init__(self,dictionary):
         self.dictionary = dictionary
 
     def dealing(self):
+
 
 
 
