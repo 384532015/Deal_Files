@@ -35,24 +35,26 @@ class Files:
     def __repr__(self):
         #用数字作为变量名！！！！
         #目前只能处理一级标题的表格
+        #遍历文件，如果文件列标签已在字典中存在，合并更新字典值；如果不存在，增加“键-值”对
+        #列表不能作为字典的键，因此需要tuple（list）
         for path,key in self.dic.items():
             # 根据不同的文件类型，采用不同的方法
             if key == 'txt':
-                if eval(self.method[key])(path,sep = ',').columns not in self.dictionary.keys():
-                    self.dictionary[eval(self.method[key])(path,sep = ',').columns] = eval(self.method[key])(path,sep = ',')
+                if tuple(eval(self.method[key])(path,sep = ',').columns) not in self.dictionary.keys():
+                    self.dictionary[tuple(eval(self.method[key])(path,sep = ',').columns)] = eval(self.method[key])(path,sep = ',')
                 else:
                     #合并同时去重
-                    self.dictionary[eval(self.method[key])(path,sep = ',').columns] = pd.concat(
-                        [self.dictionary[eval(self.method[key])(path,sep = ',').columns],
-                         self.dictionary[eval(self.method[key])(path,sep = ',')]]).drop_duplicates()
+                    self.dictionary[tuple(eval(self.method[key])(path,sep = ',').columns)] = pd.concat(
+                        [self.dictionary[tuple(eval(self.method[key])(path,sep = ',').columns)],
+                         eval(self.method[key])(path,sep = ',')]).drop_duplicates()
             else:
-                if eval(self.method[key])(path, sep=',').columns not in self.dictionary.keys():
-                    self.dictionary[eval(self.method[key])(path).columns] = eval(self.method[key])(path)
+                if tuple(eval(self.method[key])(path, sep=',').columns) not in self.dictionary.keys():
+                    self.dictionary[tuple(eval(self.method[key])(path).columns)] = eval(self.method[key])(path)
                 else:
                     #合并同时去重
-                    self.dictionary[eval(self.method[key])(path).columns] = pd.concat(
-                        [self.dictionary[eval(self.method[key])(path).columns],
-                         self.dictionary[eval(self.method[key])(path)]]).drop_duplicates()
+                    self.dictionary[tuple(eval(self.method[key])(path).columns)] = pd.concat(
+                        [self.dictionary[tuple(eval(self.method[key])(path).columns)],
+                         eval(self.method[key])(path)]).drop_duplicates()
         return self.dictionary
 
 #用于处理文件,输入字典，根据文件内容，根据文件项数，使用pd.merge()的方法
