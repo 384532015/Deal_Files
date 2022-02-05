@@ -1,88 +1,70 @@
 import pandas as pd
-import os,re
-from collections import abc
+import os
 
-#输入文件路径，生成字典{绝对路径：文件后缀名}
+
+# 输入文件路径，生成列表[文件绝对路径]
 class Folder:
-    def __init__(self,Folder_dir):
-        self.Folder_dir = Folder_dir
-        self.dic = {}
+    def __init__(self, folder_dir):
+        self.folder_dir = folder_dir
 
-    #实例返回一个字典
-    def __repr__(self):
-        Folder.Dealing(self.Folder_dir)
-        return self.dic
+    # 遍历文件夹内所有文件，并向下遍历，生成内容为文件绝对路径的列表
+    def files(self):
+        for folder_dir, folders, files in os.walk(self.folder_dir):
+            # 返回一个列表生成器
+            return [os.path.join(folder_dir, file_name) for file_name in files]
 
-    #遍历文件夹内所有文件，并向下遍历，{绝对路径：文件后缀名}
-    @classmethod
-    def Dealing(cls,files):
-        for folder_dir,folders,files in os.walk(files):
-            for file_name in files:
-                self.dic[os.path.join(folder_dir,file_name)] = file_name.split('.')[-1]
 
-#输入字典，将具有相同列标签的表concai合并，生成{[列标签]:表内容}的字典
+# 输入列表，处理文件的方法(可编辑,但是命名必须以cui_开头）
 class Files:
-    def __init__(self,dic):
-        self.dic = dic
-        self.method = {
-            "txt":"pd.read_table",
-            "xls":"pd.read_excel",
-            "xlxs":"pd.read_excel",
-            "csv":"pd.read_csv"
-        }
-        self.dictionary = {}
+    def __init__(self, file_list):
+        self.list = file_list
 
-    def __repr__(self):
-        #用数字作为变量名！！！！
-        #目前只能处理一级标题的表格
-        #遍历文件，如果文件列标签已在字典中存在，合并更新字典值；如果不存在，增加“键-值”对
-        #列表不能作为字典的键，因此需要tuple（list）
-        for path,key in self.dic.items():
-            # 根据不同的文件类型，采用不同的方法
-            if key == 'txt':
-                if tuple(eval(self.method[key])(path,sep = ',').columns) not in self.dictionary.keys():
-                    self.dictionary[tuple(eval(self.method[key])(path,sep = ',').columns)] = eval(self.method[key])(path,sep = ',')
-                else:
-                    #合并同时去重
-                    self.dictionary[tuple(eval(self.method[key])(path,sep = ',').columns)] = pd.concat(
-                        [self.dictionary[tuple(eval(self.method[key])(path,sep = ',').columns)],
-                         eval(self.method[key])(path,sep = ',')]).drop_duplicates()
-            else:
-                if tuple(eval(self.method[key])(path, sep=',').columns) not in self.dictionary.keys():
-                    self.dictionary[tuple(eval(self.method[key])(path).columns)] = eval(self.method[key])(path)
-                else:
-                    #合并同时去重
-                    self.dictionary[tuple(eval(self.method[key])(path).columns)] = pd.concat(
-                        [self.dictionary[tuple(eval(self.method[key])(path).columns)],
-                         eval(self.method[key])(path)]).drop_duplicates()
-        return self.dictionary
+    @staticmethod
+    def cui_txt(file_dir):
+        return pd.read_table(file_dir, sep=',')
 
-#用于处理文件,输入字典，根据文件内容，根据文件项数，使用pd.merge()的方法
-class Dealing:
-    def __init__(self,dictionary):
-        self.dictionary = dictionary
+    @staticmethod
+    def cui_excel(file_dir):
+        return pd.read_excel(file_dir, sheet_name=0)
 
+    @staticmethod
+    def cui_csv(file_dir):
+        return pd.read_csv(file_dir, sep=',')
+
+
+# 输入Files(实例化)对象，读取文件内容,生成包含文件内容的列表
+class Reading:
+    def __init__(self, classes):
+        self.object = classes
+        self.method_list = [name for name in dir(self.object) if name.startswith('cui')]
+        self.file_dir_list = self.object.list
+        self.file_list = []
+        self.new_file_list = []
+
+    def reading(self):
+        for file_dir in self.file_dir_list:
+            for method in self.method_list:
+                try:
+                    if self.file_list.append(eval('{}.{}({})'.format(self.object, method, file_dir))):
+                        break
+                except BaseException:
+                    pass
+
+    # 处理文件的过程
+    # 必须先调用reading的方法，才能调用dealing的方法
     def dealing(self):
+        # concat操作
+        count = len(self.file_list)
+        for i in range(count):
+            df = self.file_list.pop(0)
+            for j in range(len(self.file_list)):
+                if df.colums == self.file_list[j].columns:
+                    df = pd.concat([df, self.file_list[j]]).drop_duplicates()
+                    del self.file_list[j]
+                else:
+                    pass
+            # 新的文件列表中所有表格的列标签都不完全一致
+            self.new_file_list.append(df)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        if len(self.new_file_list) == 1:
+            pd.to_excel()
