@@ -22,3 +22,4 @@ def all_progress(folder_dir):
     else:
         ultimate_file.drop_duplicates('销售人员代码',inplace= True)
         ultimate_file['渠道'].dropna(inplace= True)
+        ultimate_file.to_excel(r'C:\Users\crl\Desktop\处理.xlsx')

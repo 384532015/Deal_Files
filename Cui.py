@@ -26,7 +26,7 @@ class Folder:
             return [os.path.join(folder_dir, file_name) for file_name in files]
 
 
-# 输入列表，处理文件的方法(可编辑,但是命名必须以cui_开头）
+# 输入列表，处理文件的方法(可添加处理方法,但是命名必须以cui_开头）
 class Method:
     @staticmethod
     def cui_txt(file_dir):
@@ -41,7 +41,7 @@ class Method:
         return pd.read_csv(file_dir, sep=',')
 
 
-# 输入Files绝对路径列表，读取文件内容,生成列标签全不相同的文件列表
+# 输入Files绝对路径列表，根据Method类读取文件内容,生成列标签全不相同的文件列表
 class Dealing:
     def __init__(self, files):
         self.method_list = [name for name in dir(Method) if name.startswith('cui')]
@@ -78,6 +78,7 @@ class Dealing:
         return self.new_file_list
 
 
+# 输入文件绝对路径的列表，读取文件，统一格式，merge处理，生成一个df
 class DeepDealing:
     def __init__(self, new_file_list):
         self.list = new_file_list
@@ -138,6 +139,7 @@ class DeepDealing:
         return df_rolling
 
 
+# 添加一晋、三晋、七留、十三留列
 class Assessment:
     def __init__(self, df):
         self.df = df
