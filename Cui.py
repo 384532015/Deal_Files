@@ -1,7 +1,6 @@
 import pandas as pd
 import os
-import re
-import time
+from datetime import datetime
 
 # 名称转化专用字典
 name_turn = {
@@ -59,6 +58,7 @@ class Dealing:
                         break
                 except BaseException:
                     pass
+        return self
 
     # 处理文件的过程
     # 必须先调用reading的方法，才能调用dealing的方法
@@ -78,11 +78,11 @@ class Dealing:
         return self.new_file_list
 
 
-class Deep_dealing:
+class DeepDealing:
     def __init__(self, new_file_list):
         self.list = new_file_list
         self.df_rolling = pd.DataFrame()
-        Deep_dealing.turn(self.list, self.df_rolling)
+        DeepDealing.turn(self.list, self.df_rolling)
 
     # 修改格式，统一标签名称，merge操作等
     @classmethod
@@ -95,9 +95,9 @@ class Deep_dealing:
                 df['渠道'] = df['人员系列'].map(name_turn)
                 # 处理销售人员代码和时间格式
                 try:
-                    df['签约日期'] = df['签约日期'].apply(lambda x: time.strptime(x, '%Y-%m-%d'))
-                    df['预解约日期'] = df['预解约日期'].apply(lambda x: time.strptime(x, '%Y-%m-%d'))
-                    df['解约日期'] = df['解约日期'].apply(lambda x: time.strptime(x, '%Y-%m-%d'))
+                    df['签约日期'] = df['签约日期'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
+                    df['预解约日期'] = df['预解约日期'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
+                    df['解约日期'] = df['解约日期'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
                 except ValueError:
                     pass
                 df_rolling = pd.merge(df_rolling, df, on='销售人员代码', how='outer')
@@ -106,7 +106,7 @@ class Deep_dealing:
             elif '考核前职级' and '确认职级' in df.columns:
                 # 处理格式
                 try:
-                    df['统计日期'] = df['统计日期'].apply(lambda x: time.strptime(x, '%Y-%m-%d'))
+                    df['统计日期'] = df['统计日期'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
                 except ValueError:
                     pass
 
@@ -137,3 +137,81 @@ class Deep_dealing:
 
         return df_rolling
 
+
+class Assessment:
+    def __init__(self, df):
+        self.df = df
+
+    def dealing(self):
+        Assessment.one(self.df)
+        Assessment.three(self.df)
+        Assessment.seven_kill(self.df)
+        Assessment.thirteen_kill(self.df)
+
+    @classmethod
+    def three(cls, df):
+        if '签约日期' and '转正日期' in df.columns:
+            three_list = []
+            for i in range(len(df)):
+                if df.iloc[i].转正日期 is None:
+                    three_list.append('否')
+                else:
+                    if (df.iloc[i].转正日期.year*12 + df.iloc[i].转正日期.month - df.iloc[i].签约日期.year*12 - df.iloc[i].签约日期.month) < 4:
+                        three_list.append('是')
+                    else:
+                        three_list.append('否')
+            df['是否三晋'] = three_list
+            return df
+        else:
+            return df
+
+    @classmethod
+    def one(cls, df):
+        if '签约日期' and '转正日期' in df.columns:
+            one_list = []
+            for i in range(len(df)):
+                if df.iloc[i].转正日期 is None:
+                    one_list.append('否')
+                else:
+                    if (df.iloc[i].转正日期.year*12 + df.iloc[i].转正日期.month - df.iloc[i].签约日期.year*12 - df.iloc[i].签约日期.month) < 2:
+                        one_list.append('是')
+                    else:
+                        one_list.append('否')
+            df['是否一晋'] = one_list
+            return df
+        else:
+            return df
+
+    @classmethod
+    def thirteen_kill(cls, df):
+        if '签约日期' and '预解约日期' in df.columns:
+            list_13 = []
+            for i in range(len(df)):
+                if df.iloc[i].预解约日期 is None:
+                    list_13.append('是')
+                else:
+                    if (df.iloc[i].预解约日期.year * 12 + df.iloc[i].预解约日期.month - df.iloc[i].签约日期.year * 12 - df.iloc[i].签约日期.month) < 13:
+                        list_13.append('否')
+                    else:
+                        list_13.append('是')
+            df['是否十三留'] = list_13
+            return df
+        else:
+            return df
+
+    @classmethod
+    def seven_kill(cls, df):
+        if '签约日期' and '预解约日期' in df.columns:
+            list_7 = []
+            for i in range(len(df)):
+                if df.iloc[i].预解约日期 is None:
+                    list_7.append('是')
+                else:
+                    if (df.iloc[i].预解约日期.year * 12 + df.iloc[i].预解约日期.month - df.iloc[i].签约日期.year * 12 - df.iloc[i].签约日期.month) < 7:
+                        list_7.append('否')
+                    else:
+                        list_7.append('是')
+            df['是否七留'] = list_7
+            return df
+        else:
+            return df
