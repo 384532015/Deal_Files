@@ -67,13 +67,14 @@ class Dealing:
         for df in self.file_list:
             self.file_list.remove(df)
             for df_1 in self.file_list:
-                if list(df.columns) == list(df_1.columns):
+                if df.columns.all() == df_1.columns.all():
                     df = pd.concat([df, df_1]).drop_duplicates()
                     self.file_list.remove(df_1)
                 else:
                     pass
             # 新的文件列表中所有表格的列标签都不完全一致
             self.new_file_list.append(df)
+            return self.dealing()
         return self.new_file_list
 
 
@@ -88,19 +89,30 @@ class DeepDealing:
     @classmethod
     def turn(cls, file_list, df_rolling):
         for df in file_list:
-            df.columns = df.columns.map(name_turn)
+            df.rename(columns= name_turn,inplace= True)
             df['销售人员代码'] = df['销售人员代码'].apply(lambda x: str(x))
+            df.set_index(df.销售人员代码,inplace= True)
+
             # 处理花名册
             if '人员系列' in df.columns:
                 df['渠道'] = df['人员系列'].map(name_turn)
                 # 处理销售人员代码和时间格式
                 try:
                     df['签约日期'] = df['签约日期'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
-                    df['预解约日期'] = df['预解约日期'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
-                    df['解约日期'] = df['解约日期'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
-                except ValueError:
+                except TypeError:
                     pass
-                df_rolling = pd.merge(df_rolling, df, on='销售人员代码', how='outer')
+
+                try:
+                    df['预解约日期'] = df['预解约日期'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
+                except TypeError:
+                    pass
+
+                try:
+                    df['解约日期'] = df['解约日期'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
+                except TypeError:
+                    pass
+
+                df_rolling = pd.merge(df_rolling, df, right_index= True, left_index= True, how='outer')
 
             # 处理历史职级
             elif '考核前职级' and '确认职级' in df.columns:
