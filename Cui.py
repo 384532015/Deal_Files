@@ -28,16 +28,16 @@ class Folder:
 
 # 输入列表，处理文件的方法(可添加处理方法,但是命名必须以cui_开头）
 class Method:
-    @staticmethod
-    def cui_txt(file_dir):
+    @classmethod
+    def cui_txt(cls,file_dir):
         return pd.read_table(file_dir, sep=',')
 
-    @staticmethod
-    def cui_excel(file_dir):
+    @classmethod
+    def cui_excel(cls,file_dir):
         return pd.read_excel(file_dir, sheet_name=0)
 
-    @staticmethod
-    def cui_csv(file_dir):
+    @classmethod
+    def cui_csv(cls,file_dir):
         return pd.read_csv(file_dir, sep=',')
 
 
@@ -54,9 +54,9 @@ class Dealing:
         for file_dir in self.file_dir_list:
             for method in self.method_list:
                 try:
-                    if self.file_list.append(eval('{}.{}({})'.format(Method, method, file_dir))):
+                    if self.file_list.append(eval('{}.{}({})'.format('Method', method, 'file_dir'))):
                         break
-                except BaseException:
+                except ValueError:
                     pass
         return self
 
@@ -64,13 +64,12 @@ class Dealing:
     # 必须先调用reading的方法，才能调用dealing的方法
     def dealing(self):
         # concat操作
-        count = len(self.file_list)
-        for i in range(count):
-            df = self.file_list.pop(0)
-            for j in range(len(self.file_list)):
-                if df.colums == self.file_list[j].columns:
-                    df = pd.concat([df, self.file_list[j]]).drop_duplicates()
-                    del self.file_list[j]
+        for df in self.file_list:
+            self.file_list.remove(df)
+            for df_1 in self.file_list:
+                if list(df.columns) == list(df_1.columns):
+                    df = pd.concat([df, df_1]).drop_duplicates()
+                    self.file_list.remove(df_1)
                 else:
                     pass
             # 新的文件列表中所有表格的列标签都不完全一致
