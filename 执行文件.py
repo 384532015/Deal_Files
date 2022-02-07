@@ -13,13 +13,12 @@ def all_progress(folder_dir):
 
     # 这是最终的完整的DataFrame（但是没有计算相应指标）
     new_file = C.DeepDealing(files).turn
-    new_file.to_excel(r'C:\Users\崔晓冰\Desktop\合并.xlsx')
 
     # 加入一晋、三晋、七留、十三留的DataFrame
-    ultimate_file = C.Assessment(new_file).dealing()
-    print(ultimate_file)
+    ultimate_file = C.Assessment(new_file)
+    print(ultimate_file.dealing())
 
-    if ('是否一晋' | '是否七留') not in ultimate_file.columns:
+    if (('是否一晋') & ('是否七留')) not in ultimate_file.columns:
         ultimate_file.to_excel(r'C:\Users\崔晓冰\Desktop\合并.xlsx')
 
     else:
