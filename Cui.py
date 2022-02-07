@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import os
 from datetime import datetime
@@ -29,15 +30,15 @@ class Folder:
 # 输入列表，处理文件的方法(可添加处理方法,但是命名必须以cui_开头）
 class Method:
     @classmethod
-    def cui_txt(cls,file_dir):
+    def cui_txt(cls, file_dir):
         return pd.read_table(file_dir, sep=',')
 
     @classmethod
-    def cui_excel(cls,file_dir):
+    def cui_excel(cls, file_dir):
         return pd.read_excel(file_dir, sheet_name=0)
 
     @classmethod
-    def cui_csv(cls,file_dir):
+    def cui_csv(cls, file_dir):
         return pd.read_csv(file_dir, sep=',')
 
 
@@ -64,16 +65,21 @@ class Dealing:
     # 必须先调用reading的方法，才能调用dealing的方法
     def dealing(self):
         # concat操作
+        remove_list = []
         for df in self.file_list:
             self.file_list.remove(df)
-            for df_1 in self.file_list:
+            for df_1, count in zip(self.file_list, range(len(self.file_list))):
                 if df.columns.all() == df_1.columns.all():
                     df = pd.concat([df, df_1]).drop_duplicates()
-                    self.file_list.remove(df_1)
+                    remove_list.append(count)
                 else:
                     pass
             # 新的文件列表中所有表格的列标签都不完全一致
             self.new_file_list.append(df)
+            # 遍历删除列表，从self.file_list删除相应的元素
+            for i in remove_list:
+                del self.file_list[i]
+            # 未处理完self.file_list,返回函数继续运行
             return self.dealing()
         return self.new_file_list
 
@@ -83,71 +89,63 @@ class DeepDealing:
     def __init__(self, new_file_list):
         self.list = new_file_list
         self.df_rolling = pd.DataFrame()
-        DeepDealing.turn(self.list, self.df_rolling)
+
+    @classmethod
+    def date_turn(cls, x):
+        try:
+            if isinstance(x, str):
+                return datetime.strptime(x, '%Y-%m-%d')
+            elif isinstance(x, float):
+                return datetime.strptime(str(x), '%Y-%m-%d')
+        except:
+            return np.nan
 
     # 修改格式，统一标签名称，merge操作等
-    @classmethod
-    def turn(cls, file_list, df_rolling):
-        for df in file_list:
-            df.rename(columns= name_turn,inplace= True)
+    @property
+    def turn(self):
+        for df in self.list:
+            df.rename(columns=name_turn, inplace=True)
             df['销售人员代码'] = df['销售人员代码'].apply(lambda x: str(x))
-            df.set_index(df.销售人员代码,inplace= True)
+            # df.set_index(df.销售人员代码, inplace=True)
 
             # 处理花名册
             if '人员系列' in df.columns:
                 df['渠道'] = df['人员系列'].map(name_turn)
                 # 处理销售人员代码和时间格式
-                try:
-                    df['签约日期'] = df['签约日期'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
-                except TypeError:
-                    pass
+                df['签约日期'] = df['签约日期'].apply(lambda x: DeepDealing.date_turn(x))
 
-                try:
-                    df['预解约日期'] = df['预解约日期'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
-                except TypeError:
-                    pass
+                df['预解约日期'] = df['预解约日期'].apply(lambda x: DeepDealing.date_turn(x))
 
-                try:
-                    df['解约日期'] = df['解约日期'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
-                except TypeError:
-                    pass
+                df['解约日期'] = df['解约日期'].apply(lambda x: DeepDealing.date_turn(x))
 
-                df_rolling = pd.merge(df_rolling, df, right_index= True, left_index= True, how='outer')
+                self.df_rolling = pd.concat([self.df_rolling, df])
 
             # 处理历史职级
             elif '考核前职级' and '确认职级' in df.columns:
                 # 处理格式
-                try:
-                    df['统计日期'] = df['统计日期'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
-                except ValueError:
-                    pass
+                df['统计日期'] = df['统计日期'].apply(lambda x: DeepDealing.date_turn(x))
 
                 # 转正日期
-                df_1 = df[(df['考核前职级'] == '营销员' or '准收展员') | (df['确认职级'] == '业务主任' or '收展员')]
-                df_1 = df_1.rename({'统计日期': '转正日期'})
+                df_1 = df[((df['考核前职级'] == '营销员') | (df['考核前职级'] == '准收展员')) & ((df['确认职级'] == '业务主任') | (df['确认职级'] == '收展员'))]
+                df_1 = df_1.rename({'统计日期': '转正日期'}, axis='columns')
 
                 # 晋组日期
-                df_2 = df[(df['占培训控制'] == '是' or '否') | (df['确认职级'] == '组经理' or '金质组经理' or '银质组经理')]
+                df_2 = df[(pd.notnull(df['占培训控制 '])) & ((df['确认职级'] == '组经理') | (df['确认职级'] == '金质组经理') | (df['确认职级'] == '银质组经理'))]
                 df_2 = df_2.rename({'统计日期': '晋组日期'}, axis='columns')
 
                 # 晋处部日期
-                df_3 = df[(df['占培训控制'] == '是' or '否') | (df['确认职级'] == '处经理' or '部经理')]
+                df_3 = df[(pd.notnull(df['占培训控制 '])) & ((df['确认职级'] == '处经理') | (df['确认职级'] == '部经理'))]
                 df_3 = df_3.rename({'统计日期': '晋处/部日期'}, axis='columns')
 
                 # merge历史职级
-                try:
-                    df_rolling = pd.merge(df_rolling, df_1, on='销售人员代码', how='outer')
-                    df_rolling = pd.merge(df_rolling, df_2, on='销售人员代码', how='outer')
-                    df_rolling = pd.merge(df_rolling, df_3, on='销售人员代码', how='outer')
-
-                except BaseException:
-                    pass
+                for i in [df_1, df_2, df_3]:
+                    self.df_rolling = pd.merge(self.df_rolling, i, on='销售人员代码', how='left')
 
             # 处理保单明细，可以继续添加功能
             else:
                 pass
 
-        return df_rolling
+        return self.df_rolling
 
 
 # 添加一晋、三晋、七留、十三留列
