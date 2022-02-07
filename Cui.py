@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
-from datetime import datetime
+from datetime import datetime,timedelta
 
 # 名称转化专用字典
 name_turn = {
@@ -95,8 +95,10 @@ class DeepDealing:
         try:
             if isinstance(x, str):
                 return datetime.strptime(x, '%Y-%m-%d')
-            elif isinstance(x, float):
-                return datetime.strptime(str(x), '%Y-%m-%d')
+            # 浮点型转为时间格式，很重要！
+            elif isinstance(x, np.float64):
+                time = datetime(year=1900, month= 1, day= 1) + timedelta(days= x)
+                return time
         except:
             return np.nan
 
@@ -154,11 +156,6 @@ class DeepDealing:
 class Assessment:
     def __init__(self, df):
         self.df = df
-
-    # def dealing(self):
-    #     Assessment.three(Assessment.one(self.df))
-    #     # Assessment.seven_kill(self.df)
-    #     # Assessment.thirteen_kill(self.df)
 
     @property
     def three(self):
@@ -226,4 +223,4 @@ class Assessment:
             self.df['是否七留'] = list_7
             return self.df
         else:
-            return self.dfA
+            return self.df

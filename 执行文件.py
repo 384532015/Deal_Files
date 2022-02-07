@@ -18,23 +18,27 @@ def all_progress(folder_dir):
     ultimate_file = C.Assessment(new_file)
     ultimate_file.one
     ultimate_file.three
-    # ultimate_file.seven_kill
-    # ultimate_file.thirteen_kill
+    ultimate_file.seven_kill
+    ultimate_file.thirteen_kill
+
+    global df
+    df = ultimate_file.df
 
 
-
-    if '是否一晋' not in ultimate_file.columns:
-        if '是否七留' not in ultimate_file.columns:
-            ultimate_file.to_excel(r'C:\Users\崔晓冰\Desktop\合并.xlsx')
+    if '是否一晋' not in df.columns:
+        if '是否七留' not in df.columns:
+            df.to_excel(r'C:\Users\crl\Desktop\合并.xlsx')
 
     else:
-        ultimate_file.drop_duplicates('销售人员代码', inplace=True)
-        ultimate_file['渠道'].dropna(inplace=True)
+        df.drop_duplicates('销售人员代码', inplace=True)
+        df['渠道'].dropna(inplace=True)
 
         # 明细表导出
-        ultimate_file.to_excel(r'C:\Users\崔晓冰\Desktop\处理.xlsx')
+        df.to_excel(r'C:\Users\crl\Desktop\处理.xlsx')
 
         # 数据透视表
-        ultimate_file.pivot_table(['是否一晋', '是否三晋'], index='基层销售机构名称', columns='销售人员代码', margins=True)
+        # ultimate_file.df.pivot_table(['是否一晋', '是否三晋'], index='基层销售机构名称', columns='销售人员代码', margins=True).to_excel(r'C:\Users\crl\Desktop\透视表.xlsx')
 
 all_progress(folder_dir)
+
+print(df)
