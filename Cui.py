@@ -106,7 +106,6 @@ class DeepDealing:
         for df in self.list:
             df.rename(columns=name_turn, inplace=True)
             df['销售人员代码'] = df['销售人员代码'].apply(lambda x: str(x))
-            # df.set_index(df.销售人员代码, inplace=True)
 
             # 处理花名册
             if '人员系列' in df.columns:
@@ -156,76 +155,75 @@ class Assessment:
     def __init__(self, df):
         self.df = df
 
-    def dealing(self):
-        Assessment.one(self.df)
-        Assessment.three(self.df)
-        Assessment.seven_kill(self.df)
-        Assessment.thirteen_kill(self.df)
+    # def dealing(self):
+    #     Assessment.three(Assessment.one(self.df))
+    #     # Assessment.seven_kill(self.df)
+    #     # Assessment.thirteen_kill(self.df)
 
-    @classmethod
-    def three(cls, df):
-        if '签约日期' and '转正日期' in df.columns:
+    @property
+    def three(self):
+        if '签约日期' and '转正日期' in self.df.columns:
             three_list = []
-            for i in range(len(df)):
-                if df.iloc[i].转正日期 is None:
+            for i in range(len(self.df)):
+                if self.df.iloc[i].转正日期 is None:
                     three_list.append('否')
                 else:
-                    if (df.iloc[i].转正日期.year*12 + df.iloc[i].转正日期.month - df.iloc[i].签约日期.year*12 - df.iloc[i].签约日期.month) < 4:
+                    if (self.df.iloc[i].转正日期.year*12 + self.df.iloc[i].转正日期.month - self.df.iloc[i].签约日期.year*12 - self.df.iloc[i].签约日期.month) < 4:
                         three_list.append('是')
                     else:
                         three_list.append('否')
-            df['是否三晋'] = three_list
-            return df
+            self.df['是否三晋'] = three_list
+            return self.df
         else:
-            return df
+            return self.df
 
-    @classmethod
-    def one(cls, df):
-        if '签约日期' and '转正日期' in df.columns:
+    @property
+    def one(self):
+        if '签约日期' and '转正日期' in self.df.columns:
             one_list = []
-            for i in range(len(df)):
-                if df.iloc[i].转正日期 is None:
+            for i in range(len(self.df)):
+                if self.df.iloc[i].转正日期 is None:
                     one_list.append('否')
                 else:
-                    if (df.iloc[i].转正日期.year*12 + df.iloc[i].转正日期.month - df.iloc[i].签约日期.year*12 - df.iloc[i].签约日期.month) < 2:
+                    if (self.df.iloc[i].转正日期.year*12 + self.df.iloc[i].转正日期.month - self.df.iloc[i].签约日期.year*12 - self.df.iloc[i].签约日期.month) < 2:
                         one_list.append('是')
                     else:
                         one_list.append('否')
-            df['是否一晋'] = one_list
-            return df
+            self.df['是否一晋'] = one_list
+            return self.df
         else:
-            return df
+            return self.df
 
-    @classmethod
-    def thirteen_kill(cls, df):
-        if '签约日期' and '预解约日期' in df.columns:
+    @property
+    def thirteen_kill(self):
+        if '签约日期' and '预解约日期' in self.df.columns:
             list_13 = []
-            for i in range(len(df)):
-                if df.iloc[i].预解约日期 is None:
+            for i in range(len(self.df)):
+                if self.df.iloc[i].预解约日期 is None:
                     list_13.append('是')
                 else:
-                    if (df.iloc[i].预解约日期.year * 12 + df.iloc[i].预解约日期.month - df.iloc[i].签约日期.year * 12 - df.iloc[i].签约日期.month) < 13:
+                    if (self.df.iloc[i].预解约日期.year * 12 + self.df.iloc[i].预解约日期.month - self.df.iloc[i].签约日期.year * 12 - self.df.iloc[i].签约日期.month) < 13:
                         list_13.append('否')
                     else:
                         list_13.append('是')
-            df['是否十三留'] = list_13
-            return df
+            self.df['是否十三留'] = list_13
+            return self.df
         else:
-            return df
+            return self.df
 
-    @classmethod
-    def seven_kill(cls, df):
-        if '签约日期' and '预解约日期' in df.columns:
+    @property
+    def seven_kill(self):
+        if '签约日期' and '预解约日期' in self.df.columns:
             list_7 = []
-            for i in range(len(df)):
-                if df.iloc[i].预解约日期 is None:
+            for i in range(len(self.df)):
+                if self.df.iloc[i].预解约日期 is None:
                     list_7.append('是')
                 else:
-                    if (df.iloc[i].预解约日期.year * 12 + df.iloc[i].预解约日期.month - df.iloc[i].签约日期.year * 12 - df.iloc[i].签约日期.month) < 7:
+                    if (self.df.iloc[i].预解约日期.year * 12 + self.df.iloc[i].预解约日期.month - self.df.iloc[i].签约日期.year * 12 - self.df.iloc[i].签约日期.month) < 7:
                         list_7.append('否')
                     else:
                         list_7.append('是')
-            df['是否七留'] = list_7
-            return df
+            self.df['是否七留'] = list_7
+            return self.df
         else:
-            return df
+            return self.dfA

@@ -1,6 +1,6 @@
 import Cui as C
 
-folder_dir = r'C:\Users\崔晓冰\Desktop\做数'
+folder_dir = r'C:\Users\crl\Desktop\处理表格'
 
 
 # 运行过程
@@ -16,17 +16,23 @@ def all_progress(folder_dir):
 
     # 加入一晋、三晋、七留、十三留的DataFrame
     ultimate_file = C.Assessment(new_file)
-    print(ultimate_file.dealing())
+    ultimate_file.one
+    ultimate_file.three
+    # ultimate_file.seven_kill
+    # ultimate_file.thirteen_kill
 
-    if (('是否一晋') & ('是否七留')) not in ultimate_file.columns:
-        ultimate_file.to_excel(r'C:\Users\崔晓冰\Desktop\合并.xlsx')
+
+
+    if '是否一晋' not in ultimate_file.columns:
+        if '是否七留' not in ultimate_file.columns:
+            ultimate_file.to_excel(r'C:\Users\崔晓冰\Desktop\合并.xlsx')
 
     else:
         ultimate_file.drop_duplicates('销售人员代码', inplace=True)
         ultimate_file['渠道'].dropna(inplace=True)
 
         # 明细表导出
-        ultimate_file.to_excel(r'C:\Users\crl\Desktop\处理.xlsx')
+        ultimate_file.to_excel(r'C:\Users\崔晓冰\Desktop\处理.xlsx')
 
         # 数据透视表
         ultimate_file.pivot_table(['是否一晋', '是否三晋'], index='基层销售机构名称', columns='销售人员代码', margins=True)
