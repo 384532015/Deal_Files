@@ -1,6 +1,6 @@
 import Cui as C
 
-folder_dir = r'C:\Users\crl\Desktop\处理表格'
+folder_dir = r'C:\Users\崔晓冰\Desktop\做数'
 
 
 # 运行过程
@@ -27,18 +27,16 @@ def all_progress(folder_dir):
 
     if '是否一晋' not in df.columns:
         if '是否七留' not in df.columns:
-            df.to_excel(r'C:\Users\crl\Desktop\合并.xlsx')
+            df.to_excel(r'C:\Users\崔晓冰\Desktop\合并.xlsx')
 
     else:
         df.drop_duplicates('销售人员代码', inplace=True)
         df['渠道'].dropna(inplace=True)
 
         # 明细表导出
-        df.to_excel(r'C:\Users\crl\Desktop\处理.xlsx')
+        df.to_excel(r'C:\Users\崔晓冰\Desktop\处理.xlsx')
 
         # 数据透视表
         # ultimate_file.df.pivot_table(['是否一晋', '是否三晋'], index='基层销售机构名称', columns='销售人员代码', margins=True).to_excel(r'C:\Users\crl\Desktop\透视表.xlsx')
 
 all_progress(folder_dir)
-
-print(df)

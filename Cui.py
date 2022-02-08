@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 
 # 名称转化专用字典
 name_turn = {
@@ -31,7 +31,7 @@ class Folder:
 class Method:
     @classmethod
     def cui_txt(cls, file_dir):
-        return pd.read_table(file_dir, sep=',')
+        return pd.read_table(file_dir, sep=',', encoding='GBK')
 
     @classmethod
     def cui_excel(cls, file_dir):
@@ -65,20 +65,22 @@ class Dealing:
     # 必须先调用reading的方法，才能调用dealing的方法
     def dealing(self):
         # concat操作
+        dictionary = dict(zip(list(range(len(self.file_list))), self.file_list))
         remove_list = []
-        for df in self.file_list:
-            self.file_list.remove(df)
-            for df_1, count in zip(self.file_list, range(len(self.file_list))):
+        for i, df in dictionary.items():
+            del dictionary[i]
+            for j, df_1 in dictionary.items():
                 if df.columns.all() == df_1.columns.all():
                     df = pd.concat([df, df_1]).drop_duplicates()
-                    remove_list.append(count)
+                    remove_list.append(j)
                 else:
                     pass
+                
             # 新的文件列表中所有表格的列标签都不完全一致
             self.new_file_list.append(df)
-            # 遍历删除列表，从self.file_list删除相应的元素
-            for i in remove_list:
-                del self.file_list[i]
+            for k in remove_list:
+                del dictionary[k]
+            self.file_list = list(dictionary.values())
             # 未处理完self.file_list,返回函数继续运行
             return self.dealing()
         return self.new_file_list
@@ -97,7 +99,7 @@ class DeepDealing:
                 return datetime.strptime(x, '%Y-%m-%d')
             # 浮点型转为时间格式，很重要！
             elif isinstance(x, np.float64):
-                time = datetime(year=1900, month= 1, day= 1) + timedelta(days= x)
+                time = datetime(year=1900, month=1, day=1) + timedelta(days=x)
                 return time
         except:
             return np.nan
