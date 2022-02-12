@@ -11,7 +11,34 @@ name_turn = {
     '营销主管系列': '营销',
     '收展员系列': '收展',
     '收展主管系列': '收展',
-    '保单服务专员系列': '收展'
+    '保单服务专员系列': '收展',
+    '德州市武城支公司营销发展部': '武城',
+    '德州市临邑支公司营销发展部': '临邑',
+    '德州市宁津支公司营销发展部': '宁津',
+    '德州市庆云支公司营销发展部': '庆云',
+    '德州市齐河支公司营销发展部': '齐河',
+    '德州市分公司市直营销部（专业化支公司）': '市直营一',
+    '德州市分公司个险营销二部': '市直营二',
+    '德州市分公司个险营销三部': '市直营三',
+    '德州市禹城支公司营销发展部': '禹城',
+    '德州市乐陵支公司营销发展部': '乐陵',
+    '德州市陵县支公司营销发展部': '陵城',
+    '德州市德城区支公司营销发展部': '德城',
+    '德州市夏津支公司营销发展部': '夏津',
+    '德州市平原支公司营销发展部': '平原',
+    '德州市乐陵支公司收展发展部': '乐陵',
+    '德州市德城区支公司收展发展部': '德城',
+    '德州市禹城支公司收展发展部': '禹城',
+    '德州市陵县支公司收展发展部': '陵城',
+    '德州市分公司城区收展专业化支公司（专业化支公司）': '收展一支',
+    '德州市齐河支公司收展发展部': '齐河',
+    '德州市临邑支公司收展发展部': '临邑',
+    '德州市武城支公司收展发展部': '武城',
+    '德州市平原支公司收展发展部': '平原',
+    '德州市庆云支公司收展发展部': '庆云',
+    '德州市宁津支公司收展发展部': '宁津',
+    '德州市夏津支公司收展发展部': '夏津',
+    '德州城区收展第二支公司收展发展部（专业化支公司）': '收展二支'
 }
 
 
@@ -43,7 +70,7 @@ class Method:
 
 
 # 输入Files绝对路径列表，根据Method类读取文件内容,生成列标签全不相同的文件列表
-class Dealing:
+class Concat:
     def __init__(self, files):
         self.method_list = [name for name in dir(Method) if name.startswith('cui')]
         self.file_dir_list = files
@@ -87,7 +114,7 @@ class Dealing:
 
 
 # 输入文件绝对路径的列表，读取文件，统一格式，merge处理，生成一个df
-class DeepDealing:
+class Data_Cleaning:
     def __init__(self, new_file_list):
         self.list = new_file_list
         self.df_rolling = pd.DataFrame()
@@ -114,22 +141,23 @@ class DeepDealing:
             # 处理花名册
             if '人员系列' in df.columns:
                 df['渠道'] = df['人员系列'].map(name_turn)
+                df['单位'] = df['核算单元名称'].map(name_turn)
                 # 处理销售人员代码和时间格式
-                df['签约日期'] = df['签约日期'].apply(lambda x: DeepDealing.date_turn(x))
+                df['签约日期'] = df['签约日期'].apply(lambda x: Data_Cleaning.date_turn(x))
 
-                df['预解约日期'] = df['预解约日期'].apply(lambda x: DeepDealing.date_turn(x))
+                df['预解约日期'] = df['预解约日期'].apply(lambda x: Data_Cleaning.date_turn(x))
 
-                df['解约日期'] = df['解约日期'].apply(lambda x: DeepDealing.date_turn(x))
+                df['解约日期'] = df['解约日期'].apply(lambda x: Data_Cleaning.date_turn(x))
 
                 self.df_rolling = pd.concat([self.df_rolling, df])
 
             # 处理历史职级
             elif '考核前职级' and '确认职级' in df.columns:
                 # 处理格式
-                df['统计日期'] = df['统计日期'].apply(lambda x: DeepDealing.date_turn(x))
+                df['统计日期'] = df['统计日期'].apply(lambda x: Data_Cleaning.date_turn(x))
 
                 # 转正日期
-                df_1 = df[((df['考核前职级'] == '营销员') | (df['考核前职级'] == '准收展员')) & ((df['确认职级'] == '业务主任') | (df['确认职级'] == '收展员'))]
+                df_1 = df[((df['考核前职级'] == '业务员') | (df['考核前职级'] == '准收展员')) & ((df['确认职级'] == '业务主任') | (df['确认职级'] == '收展员'))]
                 df_1 = df_1.rename({'统计日期': '转正日期'}, axis='columns')
                 df_1 = df_1.reindex(columns=['销售人员代码', '转正日期'])
 

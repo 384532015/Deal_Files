@@ -9,10 +9,10 @@ def all_progress(folder_dir):
     file_list = C.Folder(folder_dir).files()
 
     # 这是一个列表（元素为列标签都不相同的DataFrame）
-    files = C.Dealing(file_list).reading().dealing()
+    files = C.Concat(file_list).reading().dealing()
 
     # 这是最终的完整的DataFrame（但是没有计算相应指标）
-    new_file = C.DeepDealing(files).turn
+    new_file = C.Data_Cleaning(files).turn
 
     # 加入一晋、三晋、七留、十三留的DataFrame
     ultimate_file = C.Assessment(new_file)
