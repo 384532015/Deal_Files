@@ -58,7 +58,7 @@ class Folder:
 class Method:
     @classmethod
     def cui_txt(cls, file_dir):
-        return pd.read_table(file_dir, sep=',', encoding='GBK')
+        return pd.read_table(file_dir, sep=',', encoding='GBK', low_memory=False)
 
     @classmethod
     def cui_excel(cls, file_dir):
@@ -132,7 +132,6 @@ class Data_Cleaning:
             return np.nan
 
     # 修改格式，统一标签名称，merge操作等
-    @property
     def turn(self):
         for df in self.list:
             df.rename(columns=name_turn, inplace=True)
