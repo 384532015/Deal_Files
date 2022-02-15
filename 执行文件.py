@@ -1,14 +1,24 @@
-import numpy as np
 import pandas as pd
 import Cui as C
 
-folder_dir = r'C:\Users\崔晓冰\Desktop\做数'
-file_dir = r'C:\Users\崔晓冰\Desktop\处理.xlsx'
+
+# 描述符，规范输入值的范围
+class year:
+    def __init__(self, data):
+        self.data = data
+
+    def __set__(self, instance, value):
+        if value >= 2015:
+            instance.__dict__[self.data] = value
+        else:
+            raise ValueError('统计年份必须大于等于2015年')
+
 
 
 # 运行过程
 class Progress:
-    def __init__(self, folder_dir, file_dir):
+    year = year('year')
+    def __init__(self, folder_dir, file_dir, year):
         # 文件夹路径
         self.folder_dir = folder_dir
         self.file_dir = file_dir
@@ -22,6 +32,8 @@ class Progress:
         # self.df = pd.DataFrame()
         # 创建excel对象，写入多个sheet
         self.writer = pd.ExcelWriter(self.file_dir)
+        self.year = year
+        self.period = pd.Period(self.year, freq='M')
 
     # 生成带有计算结果的明细表
     def roller(self):
@@ -45,8 +57,11 @@ class Progress:
             self.file.drop_duplicates('销售人员代码', inplace=True)
             self.file['渠道'].dropna()
             # 生成一晋和三晋的数据透视表
-            df = pd.pivot_table(self.file, index=['单位'], columns=['渠道', '签约日期', '是否一晋'], values=['销售人员代码'], aggfunc='count')
-            df_1 = pd.pivot_table(self.file, index=['单位'], columns=['渠道', '签约日期', '是否三晋'], values=['销售人员代码'], aggfunc='count')
+            df = pd.pivot_table(self.file[(self.file['签约日期']>=self.period) & (self.file['签约日期']<(self.period+12))], index=['单位'], columns=['渠道', '签约日期', '是否一晋'], values=['销售人员代码'], aggfunc='count')
+            df_1 = pd.pivot_table(self.file[(self.file['签约日期']>=(self.period-3)) & (self.file['签约日期']<(self.period+9))], index=['单位'], columns=['渠道', '签约日期', '是否三晋'], values=['销售人员代码'], aggfunc='count')
+            print(df)
+            print(df_1)
+
             # 需要使用@classmethod处理数据透视表
             Progress.dealing(df).to_excel(self.writer, sheet_name='一晋')
             Progress.dealing(df_1).to_excel(self.writer, sheet_name='三晋')
@@ -55,9 +70,8 @@ class Progress:
 
             if '是否七留' in self.file.columns:
                 # 生成七留和十三留的数据透视表
-                df_2 = pd.pivot_table(self.file, index='单位', columns=['渠道', '签约日期', '是否七留'], values='销售人员代码', aggfunc='count')
-                df_3 = pd.pivot_table(self.file, index='单位', columns=['渠道', '签约日期', '是否十三留'], values='销售人员代码', aggfunc='count')
-                print(df_2)
+                df_2 = pd.pivot_table(self.file[(self.file['签约日期']>=(self.period-6)) & (self.file['签约日期']<(self.period+6))], index='单位', columns=['渠道', '签约日期', '是否七留'], values='销售人员代码', aggfunc='count')
+                df_3 = pd.pivot_table(self.file[(self.file['签约日期']>=(self.period)) & (self.file['签约日期']<(self.period+12))], index='单位', columns=['渠道', '签约日期', '是否十三留'], values='销售人员代码', aggfunc='count')
                 # 需要使用@classmethod处理数据透视表
                 Progress.dealing(df_2).to_excel(self.writer, sheet_name='七留')
                 Progress.dealing(df_3).to_excel(self.writer, sheet_name='十三留')
@@ -67,8 +81,13 @@ class Progress:
 
         elif '是否七留' in self.file.columns:
             # 生成七留和十三留的数据透视表
-            df_2 = pd.pivot_table(self.file, index='单位', columns=['渠道', '签约日期', '是否七留'], values='销售人员代码', aggfunc='count')
-            df_3 = pd.pivot_table(self.file, index='单位', columns=['渠道', '签约日期', '是否十三留'], values='销售人员代码', aggfunc='count')
+            df_2 = pd.pivot_table(
+                self.file[self.file['签约日期'] >= (self.period - 6) and self.file['签约日期'] < (self.period + 6)], index='单位',
+                columns=['渠道', '签约日期', '是否七留'], values='销售人员代码', aggfunc='count')
+            df_3 = pd.pivot_table(
+                self.file[self.file['签约日期'] >= (self.period) and self.file['签约日期'] < (self.period + 12)], index='单位',
+                columns=['渠道', '签约日期', '是否十三留'], values='销售人员代码', aggfunc='count')
+
             # 需要使用@classmethod处理数据透视表
             Progress.dealing(df_2).to_excel(self.writer, sheet_name='七留')
             Progress.dealing(df_3).to_excel(self.writer, sheet_name='十三留')
@@ -83,6 +102,7 @@ class Progress:
     def dealing(cls, df):
         if '是否七留' in df.columns.names or '是否十三留' in df.columns.names:
             df = df.rename({'是': '留存人数', '否': '留存率'}, axis=1)
+            # 选取最下层标签
             for *content, indicator in df.columns.values:
                 if '留存率' in df[tuple(content)].columns:
                     df[(*content, '入司人数')] = df[(*content, '留存率')] + df[(*content, '留存人数')]
@@ -93,23 +113,38 @@ class Progress:
                     df[(*content, '入司人数')] = df[(*content, '留存率')] + df[(*content, '留存人数')]
                     df[(*content, '留存率')] = df[(*content, '留存人数')] / df[(*content, '入司人数')]
                     df.sort_index(axis=1)
-            #返回处理后的表格
+            # 返回处理后的表格
             return df
 
         elif '是否一晋' in df.columns.names or '是否三晋' in df.columns.names:
             df = df.rename({'是': '转正人数', '否': '转正率'}, axis=1)
             for *content, indicator in df.columns.values:
-                try:
+                if '转正人数' in df[tuple(content)].columns and '转正率' in df[tuple(content)].columns:
                     df[(*content, '入司人数')] = df[(*content, '转正率')] + df[(*content, '转正人数')]
                     df[(*content, '转正率')] = df[(*content, '转正人数')]/df[(*content, '入司人数')]
                     df.sort_index(axis=1)
-                except KeyError:
-                    del df[tuple(content)]
+                else:
+                    if '转正人数' not in df[tuple(content)].columns:
+                        df[(*content, '转正人数')] = [0] * len(df.index)
+                        df[(*content, '入司人数')] = df[(*content, '转正率')] + df[(*content, '转正人数')]
+                        df[(*content, '转正率')] = df[(*content, '转正人数')] / df[(*content, '入司人数')]
+                        df.sort_index(axis=1)
+                    else:
+                        df[(*content, '转正率')] = [0] * len(df.index)
+                        df[(*content, '入司人数')] = df[(*content, '转正率')] + df[(*content, '转正人数')]
+                        df[(*content, '转正率')] = df[(*content, '转正人数')] / df[(*content, '入司人数')]
+                        df.sort_index(axis=1)
             # 返回处理后的表格
             return df
 
 
-File = Progress(folder_dir,file_dir)
+# 设置需要处理的文件夹
+folder_dir = r'C:\Users\crl\Desktop\处理表格'
+# 设置输出的文件
+file_dir = r'C:\Users\crl\Desktop\处理.xlsx'
+# 设置选取的年份
+year = 2021
+File = Progress(folder_dir, file_dir, year)
 File.roller()
 File.pivot_df()
 
