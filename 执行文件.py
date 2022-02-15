@@ -39,13 +39,14 @@ class Progress:
 
     # 生成数据透视表
     def pivot_df(self):
+        self.file = self.file.set_index('签约日期').to_period('M').reset_index()
         if '是否一晋' in self.file.columns:
             # 去重
             self.file.drop_duplicates('销售人员代码', inplace=True)
-            self.df['渠道'].dropna(inplace=True)
+            self.file['渠道'].dropna()
             # 生成一晋和三晋的数据透视表
-            df = pd.pivot_table(self.file, index='单位', columns=['渠道', '签约日期', '是否一晋'], values='销售人员代码', aggfunc='count')
-            df_1 = pd.pivot_table(self.file, index='单位', columns=['渠道', '签约日期', '是否三晋'], values='销售人员代码', aggfunc='count')
+            df = pd.pivot_table(self.file, index=['单位'], columns=['渠道', '签约日期', '是否一晋'], values=['销售人员代码'], aggfunc='count')
+            df_1 = pd.pivot_table(self.file, index=['单位'], columns=['渠道', '签约日期', '是否三晋'], values=['销售人员代码'], aggfunc='count')
             # 需要使用@classmethod处理数据透视表
             Progress.dealing(df).to_excel(self.writer, sheet_name='一晋')
             Progress.dealing(df_1).to_excel(self.writer, sheet_name='三晋')
@@ -56,6 +57,7 @@ class Progress:
                 # 生成七留和十三留的数据透视表
                 df_2 = pd.pivot_table(self.file, index='单位', columns=['渠道', '签约日期', '是否七留'], values='销售人员代码', aggfunc='count')
                 df_3 = pd.pivot_table(self.file, index='单位', columns=['渠道', '签约日期', '是否十三留'], values='销售人员代码', aggfunc='count')
+                print(df_2)
                 # 需要使用@classmethod处理数据透视表
                 Progress.dealing(df_2).to_excel(self.writer, sheet_name='七留')
                 Progress.dealing(df_3).to_excel(self.writer, sheet_name='十三留')
@@ -73,37 +75,41 @@ class Progress:
             self.writer.save()
 
         else:
-            self.df.to_excel(self.writer, sheet_name='合并')
+            self.file.to_excel(self.writer, sheet_name='合并')
             self.writer.save()
 
     # 处理数据透视表方法
     @classmethod
     def dealing(cls, df):
-        if '是否七留' or '是否十三留' in df.columns.names:
-            df.rename({'是': '留存人数', '否': '留存率'}, axis=1)
-            for channel, date, indicator in df.columns.values:
-                df[(channel, date, '入司人数')] = df[(channel, date, '留存率')] + df[(channel, date, '留存人数')]
-                df[(channel, date, '留存率')] = df[(channel, date, '留存人数')]/df[(channel, date, '入司人数')]
-                df.sort_index(axis=1)
+        if '是否七留' in df.columns.names or '是否十三留' in df.columns.names:
+            df = df.rename({'是': '留存人数', '否': '留存率'}, axis=1)
+            for *content, indicator in df.columns.values:
+                if '留存率' in df[tuple(content)].columns:
+                    df[(*content, '入司人数')] = df[(*content, '留存率')] + df[(*content, '留存人数')]
+                    df[(*content, '留存率')] = df[(*content, '留存人数')]/df[(*content, '入司人数')]
+                    df.sort_index(axis=1)
+                else:
+                    df[(*content, '留存率')] = [0]* len(df.index)
+                    df[(*content, '入司人数')] = df[(*content, '留存率')] + df[(*content, '留存人数')]
+                    df[(*content, '留存率')] = df[(*content, '留存人数')] / df[(*content, '入司人数')]
+                    df.sort_index(axis=1)
             #返回处理后的表格
             return df
 
-        elif '是否一晋' or '是否三晋' in df.columns.names:
-            df.rename({'是': '转正人数', '否': '转正率'}, axis=1)
-            for channel, date, indicator in df.columns.values:
-                if df[(channel, date, '转正人数')]:
-                    df[(channel, date, '入司人数')] = df[(channel, date, '留存率')] + df[(channel, date, '留存人数')]
-                    df[(channel, date, '留存率')] = df[(channel, date, '留存人数')]/df[(channel, date, '入司人数')]
+        elif '是否一晋' in df.columns.names or '是否三晋' in df.columns.names:
+            df = df.rename({'是': '转正人数', '否': '转正率'}, axis=1)
+            for *content, indicator in df.columns.values:
+                try:
+                    df[(*content, '入司人数')] = df[(*content, '转正率')] + df[(*content, '转正人数')]
+                    df[(*content, '转正率')] = df[(*content, '转正人数')]/df[(*content, '入司人数')]
                     df.sort_index(axis=1)
-                else:
-                    df[(channel, date, '转正人数')] = [np.NaN]* len(df.index)
-                    df[(channel, date, '入司人数')] = df[(channel, date, '留存率')] + df[(channel, date, '留存人数')]
-                    df[(channel, date, '留存率')] = df[(channel, date, '留存人数')] / df[(channel, date, '入司人数')]
-                    df.sort_index(axis=1)
+                except KeyError:
+                    del df[tuple(content)]
             # 返回处理后的表格
             return df
 
 
 File = Progress(folder_dir,file_dir)
-File.roller().pivot_df()
+File.roller()
+File.pivot_df()
 
