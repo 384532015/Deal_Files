@@ -49,8 +49,25 @@ class Progress:
 
         return self.file
 
+    # 调整表格顺序
+    # @staticmethod
+    def reorder(df):
+        reorder = []
+        for num in range(len(df.columns.names)-1):
+            print(list(df.columns.get_level_values(num).sort_values()))
+            reorder.append(list(df.columns.get_level_values(num).sort_values()))
+            print(reorder)
+        # 重新对列标签进行排序
+        print(zip(tuple(reorder)))
+        df = df[zip(tuple(reorder))]
+        return df
+
+
+
     # 生成数据透视表
     def pivot_df(self):
+        self.file.to_excel(self.writer, sheet_name='基础表')
+        self.writer.save()
         self.file = self.file.set_index('签约日期').to_period('M').reset_index()
         if '是否一晋' in self.file.columns:
             # 去重
@@ -70,6 +87,7 @@ class Progress:
                 # 生成七留和十三留的数据透视表
                 df_2 = pd.pivot_table(self.file[(self.file['签约日期']>=(self.period-6)) & (self.file['签约日期']<(self.period+6))], index='单位', columns=['渠道', '签约日期', '是否七留'], values='销售人员代码', aggfunc='count')
                 df_3 = pd.pivot_table(self.file[(self.file['签约日期']>=(self.period)) & (self.file['签约日期']<(self.period+12))], index='单位', columns=['渠道', '签约日期', '是否十三留'], values='销售人员代码', aggfunc='count')
+
                 # 需要使用@classmethod处理数据透视表
                 Progress.dealing(df_2).to_excel(self.writer, sheet_name='七留')
                 Progress.dealing(df_3).to_excel(self.writer, sheet_name='十三留')
@@ -85,14 +103,15 @@ class Progress:
             df_3 = pd.pivot_table(
                 self.file[self.file['签约日期'] >= (self.period) and self.file['签约日期'] < (self.period + 12)], index='单位',
                 columns=['渠道', '签约日期', '是否十三留'], values='销售人员代码', aggfunc='count')
+
             # 需要使用@classmethod处理数据透视表
             Progress.dealing(df_2).to_excel(self.writer, sheet_name='七留')
             Progress.dealing(df_3).to_excel(self.writer, sheet_name='十三留')
             self.writer.save()
 
+        # 没有相应指标，返回合并的表格
         else:
-            self.file.to_excel(self.writer, sheet_name='合并')
-            self.writer.save()
+            pass
 
     # 处理数据透视表方法
     @classmethod
@@ -104,20 +123,24 @@ class Progress:
                 if '留存人数' in df[tuple(content)].columns and '未留存人数' in df[tuple(content)].columns:
                     df[(*content, '入司人数')] = df[(*content, '留存人数')] + df[(*content, '未留存人数')]
                     df[(*content, '留存率')] = df[(*content, '留存人数')]/df[(*content, '入司人数')]
-                    df.sort_index(axis=1)
+                    # del df[(*content, '未留存人数')]
+                    df[tuple(content)] = df[tuple(content)].reindex(['留存率', '留存人数', '未留存人数', '入司人数'], axis=1)
                 else:
                     if '未留存人数' not in df[tuple(content)].columns:
                         df[(*content, '未留存人数')] = [0]* len(df.index)
                         df[(*content, '入司人数')] = df[(*content, '未留存人数')] + df[(*content, '留存人数')]
                         df[(*content, '留存率')] = df[(*content, '留存人数')] / df[(*content, '入司人数')]
-                        df.sort_index(axis=1)
+                        # del df[(*content, '未留存人数')]
+                        df[tuple(content)] = df[tuple(content)].reindex(['留存率', '留存人数', '未留存人数', '入司人数'], axis=1)
                     else:
                         df[(*content, '留存人数')] = [0] * len(df.index)
                         df[(*content, '入司人数')] = df[(*content, '未留存人数')] + df[(*content, '留存人数')]
                         df[(*content, '留存率')] = df[(*content, '留存人数')] / df[(*content, '入司人数')]
-                        df.sort_index(axis=1)
+                        # del df[(*content, '未留存人数')]
+                        df[tuple(content)] = df[tuple(content)].reindex(['留存率', '留存人数', '未留存人数', '入司人数'], axis=1)
+
             # 返回处理后的表格
-            return df
+            return Progress.reorder(df)
 
         elif '是否一晋' in df.columns.names or '是否三晋' in df.columns.names:
             df = df.rename({'是': '转正人数', '否': '未转正人数'}, axis=1)
@@ -125,26 +148,30 @@ class Progress:
                 if '转正人数' in df[tuple(content)].columns and '未转正人数' in df[tuple(content)].columns:
                     df[(*content, '入司人数')] = df[(*content, '未转正人数')] + df[(*content, '转正人数')]
                     df[(*content, '转正率')] = df[(*content, '转正人数')]/df[(*content, '入司人数')]
-                    df.sort_index(axis=1)
+                    # del df[(*content, '未转正人数')]
+                    df[tuple(content)] = df[tuple(content)].reindex(['转正率', '转正人数', '未转正人数', '入司人数'], axis=1)
                 else:
                     if '转正人数' not in df[tuple(content)].columns:
                         df[(*content, '转正人数')] = [0] * len(df.index)
                         df[(*content, '入司人数')] = df[(*content, '未转正人数')] + df[(*content, '转正人数')]
                         df[(*content, '转正率')] = df[(*content, '转正人数')] / df[(*content, '入司人数')]
-                        df.sort_index(axis=1)
+                        # del df[(*content, '未转正人数')]
+                        df[tuple(content)] = df[tuple(content)].reindex(['转正率', '转正人数', '未转正人数', '入司人数'], axis=1)
                     else:
                         df[(*content, '未转正人数')] = [0] * len(df.index)
                         df[(*content, '入司人数')] = df[(*content, '未转正人数')] + df[(*content, '转正人数')]
                         df[(*content, '转正率')] = df[(*content, '转正人数')] / df[(*content, '入司人数')]
-                        df.sort_index(axis=1)
+                        # del df[(*content, '未转正人数')]
+                        df[tuple(content)] = df[tuple(content)].reindex(['转正率', '转正人数', '未转正人数', '入司人数'], axis=1)
             # 返回处理后的表格
-            return df
+            return Progress.reorder(df)
+
 
 
 # 设置需要处理的文件夹
-folder_dir = r'C:\Users\crl\Desktop\处理表格'
+folder_dir = r'C:\Users\崔晓冰\Desktop\做数'
 # 设置输出的文件
-file_dir = r'C:\Users\crl\Desktop\处理.xlsx'
+file_dir = r'C:\Users\崔晓冰\Desktop\处理.xlsx'
 # 设置选取的年份
 year = 2021
 File = Progress(folder_dir, file_dir, year)
