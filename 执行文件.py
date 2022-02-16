@@ -1,5 +1,6 @@
 import pandas as pd
 import Cui as C
+from pandas import Period
 
 
 # 描述符，规范输入值的范围
@@ -12,7 +13,6 @@ class year:
             instance.__dict__[self.data] = value
         else:
             raise ValueError('统计年份必须大于等于2015年')
-
 
 
 # 运行过程
@@ -50,16 +50,22 @@ class Progress:
         return self.file
 
     # 调整表格顺序
-    # @staticmethod
+    @staticmethod
     def reorder(df):
-        reorder = []
+        string = ''
         for num in range(len(df.columns.names)-1):
-            print(list(df.columns.get_level_values(num).sort_values()))
-            reorder.append(list(df.columns.get_level_values(num).sort_values()))
-            print(reorder)
-        # 重新对列标签进行排序
-        print(zip(tuple(reorder)))
-        df = df[zip(tuple(reorder))]
+            # 动态创建变量
+            exec('df_{} = {}'.format(num, list(df.columns.get_level_values(num).sort_values())))
+            string = string + 'df_{},'.format(num)
+            print(string)
+
+        # 删除字符串中最后一个“，”
+        string = string[: -1]
+        # 创建新的标签
+        print(string)
+        reorder = list(zip(eval(string)))
+        print(reorder)
+
         return df
 
 
@@ -81,7 +87,6 @@ class Progress:
             Progress.dealing(df).to_excel(self.writer, sheet_name='一晋')
             Progress.dealing(df_1).to_excel(self.writer, sheet_name='三晋')
             self.writer.save()
-
 
             if '是否七留' in self.file.columns:
                 # 生成七留和十三留的数据透视表
@@ -169,9 +174,9 @@ class Progress:
 
 
 # 设置需要处理的文件夹
-folder_dir = r'C:\Users\崔晓冰\Desktop\做数'
+folder_dir = r'C:\Users\crl\Desktop\处理表格'
 # 设置输出的文件
-file_dir = r'C:\Users\崔晓冰\Desktop\处理.xlsx'
+file_dir = r'C:\Users\crl\Desktop\处理.xlsx'
 # 设置选取的年份
 year = 2021
 File = Progress(folder_dir, file_dir, year)
