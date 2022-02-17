@@ -38,7 +38,25 @@ name_turn = {
     '德州市庆云支公司收展发展部': '庆云',
     '德州市宁津支公司收展发展部': '宁津',
     '德州市夏津支公司收展发展部': '夏津',
-    '德州城区收展第二支公司收展发展部（专业化支公司）': '收展二支'
+    '德州城区收展第二支公司收展发展部（专业化支公司）': '收展二支',
+    '德州市分公司城区收展专业化支公司（专业化': '收展一支',
+    '德州市分公司个险营销三部收展部': '德城',
+    '德州市分公司市直银行保险部（专业化支公司': '收展二支',
+    '德州市分公司庆云支公司银行保险部': '庆云',
+    '德州市分公司宁津支公司团险部': '宁津',
+    '德州市分公司宁津支公司银行保险部': '宁津',
+    '德州市分公司庆云支公司团险部': '庆云',
+    '德州市分公司乐陵支公司银行保险部': '乐陵',
+    '德州市分公司禹城支公司银行保险部': '禹城',
+    '德州市分公司禹城支公司团险部': '禹城',
+    '德州市分公司乐陵支公司团险部': '乐陵',
+    '德州市分公司德城区支公司银行保险部': '德城',
+    '德州市分公司临邑支公司银行保险部': '临邑',
+    '德州市分公司齐河支公司银行保险部': '齐河',
+    '德州市分公司武城支公司银行保险部': '武城',
+    '德州市分公司陵县支公司银行保险部': '陵城',
+    '德州市分公司夏津支公司团险部': '夏津',
+    '德州市分公司夏津支公司银行保险部': '夏津'
 }
 
 
@@ -98,7 +116,11 @@ class Concat:
             del dictionary[i]
             for j, df_1 in dictionary.items():
                 if df.columns.all() == df_1.columns.all():
-                    df = pd.concat([df, df_1]).drop_duplicates()
+                    # 保留最新数据，删除工号重复的项
+                    if '预解约日期' in df.columns:
+                        df = pd.concat([df, df_1]).sort_values(by=['预解约日期'], na_position='last').drop_duplicates(subset=['销售人员代码'], keep='first')
+                    else:
+                        df = pd.concat([df, df_1]).drop_duplicates()
                     remove_list.append(j)
                 else:
                     pass
@@ -171,12 +193,13 @@ class Data_Cleaning:
                 df_3 = df_3.reindex(columns=['销售人员代码', '晋处/部日期'])
 
                 # merge历史职级
-                for i in [df_1, df_2, df_3]:
-                    self.df_rolling = pd.merge(self.df_rolling, i, on='销售人员代码', how='left')
+                df_sum = pd.concat([df_1, df_2, df_3])
 
             # 处理保单明细，可以继续添加功能
             else:
                 pass
+
+        self.df_rolling = pd.merge(self.df_rolling, df_sum, on='销售人员代码', how='left')
 
         return self.df_rolling
 
