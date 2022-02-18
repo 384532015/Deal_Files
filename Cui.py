@@ -76,7 +76,12 @@ class Folder:
 class Method:
     @classmethod
     def cui_txt(cls, file_dir):
-        return pd.read_table(file_dir, sep=',', encoding='GBK', low_memory=False)
+        # 测试所有编码
+        for i in ['GBK', 'ASCII', 'utf-8', 'GB18030', 'latin1', 'ANSI']:
+            try:
+                return pd.read_table(file_dir, sep=',', encoding=i, low_memory=False)
+            except ValueError:
+                pass
 
     @classmethod
     def cui_excel(cls, file_dir):
@@ -157,7 +162,8 @@ class Data_Cleaning:
     def turn(self):
         for df in self.list:
             df.rename(columns=name_turn, inplace=True)
-            df['销售人员代码'] = df['销售人员代码'].apply(lambda x: str(x))
+            df['销售人员代码'] = df['销售人员代码'].fillna(0)
+            df['销售人员代码'] = df['销售人员代码'].apply(lambda x: str(int(x)))
 
             # 处理花名册
             if '人员系列' in df.columns:
